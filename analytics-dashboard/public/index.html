@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </span>
+      <h1>Analytics</h1>
+      <span class="badge live" id="statusBadge">● LIVE</span>
+    </div>
+    <div class="header-right">
+      <span class="last-updated" id="lastUpdated">Connecting…</span>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <svg id="iconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg id="iconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- ── KPI Cards ──────────────────────────────────────────── -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Active Users</span>
+          <span class="kpi-value" id="kpiActiveUsers">—</span>
+          <span class="kpi-delta" id="deltaActiveUsers"></span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Page Views</span>
+          <span class="kpi-value" id="kpiPageViews">—</span>
+          <span class="kpi-delta" id="deltaPageViews"></span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Revenue</span>
+          <span class="kpi-value" id="kpiRevenue">—</span>
+          <span class="kpi-delta" id="deltaRevenue"></span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--red">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Error Rate</span>
+          <span class="kpi-value" id="kpiErrorRate">—</span>
+          <span class="kpi-delta" id="deltaErrorRate"></span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Server Load</span>
+          <span class="kpi-value" id="kpiServerLoad">—</span>
+          <span class="kpi-delta" id="deltaServerLoad"></span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--teal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Response Time</span>
+          <span class="kpi-value" id="kpiResponseTime">—</span>
+          <span class="kpi-delta" id="deltaResponseTime"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Charts row 1 ──────────────────────────────────────── -->
+    <section class="charts-row">
+      <div class="chart-card chart-card--wide">
+        <div class="chart-header">
+          <h2>Active Users <span class="chart-sub">Real-time</span></h2>
+          <span class="dot dot--blue"></span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartUsers"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2>Server Load <span class="chart-sub">%</span></h2>
+          <span class="dot dot--orange"></span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartLoad"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ── Charts row 2 ──────────────────────────────────────── -->
+    <section class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2>Revenue <span class="chart-sub">per tick (USD)</span></h2>
+          <span class="dot dot--green"></span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartRevenue"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2>Response Time <span class="chart-sub">ms</span></h2>
+          <span class="dot dot--teal"></span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartResponse"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2>Error Rate <span class="chart-sub">%</span></h2>
+          <span class="dot dot--red"></span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartError"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ── Bottom row: gauge + events ────────────────────────── -->
+    <section class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2>Traffic Mix <span class="chart-sub">page views by source</span></h2>
+        </div>
+        <div class="chart-wrap chart-wrap--doughnut"><canvas id="chartDoughnut"></canvas></div>
+      </div>
+
+      <div class="chart-card chart-card--wide">
+        <div class="chart-header">
+          <h2>System Events</h2>
+          <span class="event-count" id="eventCount">0</span>
+        </div>
+        <ul class="event-list" id="eventList">
+          <li class="event-empty">Waiting for events…</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── API Explorer ───────────────────────────────────────── -->
+    <section class="api-explorer">
+      <h2>REST API</h2>
+      <div class="api-grid">
+        <div class="api-endpoint" data-url="/api/metrics">
+          <code>GET /api/metrics</code>
+          <span>Current snapshot of all metrics</span>
+        </div>
+        <div class="api-endpoint" data-url="/api/history">
+          <code>GET /api/history</code>
+          <span>Time-series history (up to 60 points)</span>
+        </div>
+        <div class="api-endpoint" data-url="/api/events">
+          <code>GET /api/events</code>
+          <span>Recent system events</span>
+        </div>
+        <div class="api-endpoint" data-url="/api/summary">
+          <code>GET /api/summary</code>
+          <span>Aggregated KPI summary</span>
+        </div>
+        <div class="api-endpoint" data-url="/api/health">
+          <code>GET /api/health</code>
+          <span>Server health &amp; uptime</span>
+        </div>
+        <div class="api-endpoint" data-url="/api/stream">
+          <code>GET /api/stream</code>
+          <span>Server-Sent Events stream</span>
+        </div>
+      </div>
+      <div class="api-response-wrap">
+        <div class="api-response-header">
+          <span id="apiResponseLabel">Click an endpoint to try it</span>
+          <button class="copy-btn" id="copyBtn" style="display:none">Copy</button>
+        </div>
+        <pre class="api-response" id="apiResponse"></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Real-time Analytics Dashboard · Updates every 2 s via SSE</span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
