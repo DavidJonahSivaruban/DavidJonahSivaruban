@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real-Time Analytics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #21253a;
+      --border: #2a2d3e; --text: #e2e8f0; --muted: #8892a4;
+      --blue: #4f86f7; --purple: #9b74f5; --green: #34d399;
+      --red: #f87171; --orange: #fb923c; --teal: #2dd4bf;
+      --r: 12px; --r2: 8px; --shadow: 0 4px 24px rgba(0,0,0,.35);
+    }
+    [data-theme="light"] {
+      --bg: #f0f2f8; --surface: #fff; --surface2: #f8f9fc;
+      --border: #e2e6f0; --text: #1a1d27; --muted: #6b7280;
+      --shadow: 0 4px 24px rgba(0,0,0,.1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px;
+      transition: background .2s, color .2s;
+    }
+
+    /* Header */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo { color: var(--blue); display: flex; align-items: center; }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .badge { font-size: 11px; font-weight: 700; letter-spacing: .6px; padding: 2px 8px; border-radius: 99px; }
+    .badge.live { background: rgba(52,211,153,.15); color: var(--green); animation: pulse 2s infinite; }
+    .badge.off  { background: rgba(248,113,113,.15); color: var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .ts { font-size: 12px; color: var(--muted); }
+    .btn-theme {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      width: 34px; height: 34px; border-radius: var(--r2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .btn-theme:hover { background: var(--border); }
+
+    /* Main */
+    .main { max-width: 1440px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap: 16px; }
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow);
+      transition: transform .2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-icon {
+      width: 44px; height: 44px; border-radius: var(--r2);
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .ic-blue   { background:rgba(79,134,247,.15); }
+    .ic-purple { background:rgba(155,116,245,.15); }
+    .ic-green  { background:rgba(52,211,153,.15); }
+    .ic-red    { background:rgba(248,113,113,.15); }
+    .ic-orange { background:rgba(251,146,60,.15); }
+    .ic-teal   { background:rgba(45,212,191,.15); }
+    .kpi-body { display: flex; flex-direction: column; gap: 2px; }
+    .kpi-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .kpi-value { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+    .kpi-delta { font-size: 11px; font-weight: 600; }
+    .up { color: var(--green); } .dn { color: var(--red); }
+
+    /* Charts */
+    .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 18px 20px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+    }
+    .card.wide { grid-column: span 2; }
+    .card-hd { display: flex; align-items: center; justify-content: space-between; }
+    .card-hd h2 { font-size: 14px; font-weight: 600; }
+    .sub { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .d-blue   { background:var(--blue);   box-shadow:0 0 6px var(--blue); }
+    .d-orange { background:var(--orange); box-shadow:0 0 6px var(--orange); }
+    .d-green  { background:var(--green);  box-shadow:0 0 6px var(--green); }
+    .d-teal   { background:var(--teal);   box-shadow:0 0 6px var(--teal); }
+    .d-red    { background:var(--red);    box-shadow:0 0 6px var(--red); }
+    .wrap { position: relative; height: 180px; }
+    .wrap-d { height: 200px; }
+
+    /* Events */
+    .ev-count { background:var(--blue); color:#fff; font-size:11px; font-weight:700; padding:1px 7px; border-radius:99px; }
+    .ev-list { list-style:none; display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto; }
+    .ev-list::-webkit-scrollbar { width:4px; }
+    .ev-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+    .ev-item {
+      display:flex; align-items:flex-start; gap:10px;
+      background:var(--surface2); border:1px solid var(--border); border-radius:var(--r2);
+      padding:8px 12px; font-size:13px; animation: si .3s ease;
+    }
+    @keyframes si { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:translateX(0)} }
+    .ev-badge { font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; flex-shrink:0; text-transform:uppercase; }
+    .eb-info    { background:rgba(79,134,247,.2); color:var(--blue); }
+    .eb-warning { background:rgba(251,146,60,.2); color:var(--orange); }
+    .eb-error   { background:rgba(248,113,113,.2); color:var(--red); }
+    .eb-success { background:rgba(52,211,153,.2); color:var(--green); }
+    .ev-time { font-size:11px; color:var(--muted); margin-top:2px; }
+    .ev-empty { color:var(--muted); font-size:13px; padding:8px 0; }
+
+    /* Footer */
+    footer { text-align:center; padding:20px; font-size:12px; color:var(--muted); border-top:1px solid var(--border); }
+
+    /* Responsive */
+    @media(max-width:900px) { .card.wide { grid-column:span 1; } }
+    @media(max-width:600px) { .main{padding:14px;} .kpi-grid{grid-template-columns:repeat(2,1fr);} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <h1>Analytics</h1>
+      <span class="badge live" id="badge">● LIVE</span>
+    </div>
+    <div class="header-right">
+      <span class="ts" id="ts">Starting…</span>
+      <button class="btn-theme" id="themeBtn" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- KPIs -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon ic-blue">👥</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Active Users</span>
+          <span class="kpi-value" id="v-users">—</span>
+          <span class="kpi-delta" id="d-users"></span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon ic-purple">👁️</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Page Views</span>
+          <span class="kpi-value" id="v-views">—</span>
+          <span class="kpi-delta" id="d-views"></span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon ic-green">💵</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Revenue</span>
+          <span class="kpi-value" id="v-rev">—</span>
+          <span class="kpi-delta" id="d-rev"></span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon ic-red">⚠️</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Error Rate</span>
+          <span class="kpi-value" id="v-err">—</span>
+          <span class="kpi-delta" id="d-err"></span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon ic-orange">🖥️</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Server Load</span>
+          <span class="kpi-value" id="v-load">—</span>
+          <span class="kpi-delta" id="d-load"></span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon ic-teal">⏱️</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Response Time</span>
+          <span class="kpi-value" id="v-resp">—</span>
+          <span class="kpi-delta" id="d-resp"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Row 1 -->
+    <section class="row">
+      <div class="card wide">
+        <div class="card-hd"><h2>Active Users <span class="sub">Real-time</span></h2><span class="dot d-blue"></span></div>
+        <div class="wrap"><canvas id="cUsers"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h2>Server Load <span class="sub">%</span></h2><span class="dot d-orange"></span></div>
+        <div class="wrap"><canvas id="cLoad"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Row 2 -->
+    <section class="row">
+      <div class="card">
+        <div class="card-hd"><h2>Revenue <span class="sub">USD / tick</span></h2><span class="dot d-green"></span></div>
+        <div class="wrap"><canvas id="cRev"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h2>Response Time <span class="sub">ms</span></h2><span class="dot d-teal"></span></div>
+        <div class="wrap"><canvas id="cResp"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h2>Error Rate <span class="sub">%</span></h2><span class="dot d-red"></span></div>
+        <div class="wrap"><canvas id="cErr"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Row 3 -->
+    <section class="row">
+      <div class="card">
+        <div class="card-hd"><h2>Traffic Mix <span class="sub">by source</span></h2></div>
+        <div class="wrap wrap-d"><canvas id="cDonut"></canvas></div>
+      </div>
+      <div class="card wide">
+        <div class="card-hd">
+          <h2>System Events</h2>
+          <span class="ev-count" id="evCount">0</span>
+        </div>
+        <ul class="ev-list" id="evList"><li class="ev-empty">Generating events…</li></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>Real-Time Analytics Dashboard · Simulated data updates every 2 s</footer>
+
+<script>
+'use strict';
+
+// ── Theme ────────────────────────────────────────────────────────────────────
+const html = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+const dark = () => html.dataset.theme === 'dark';
+
+themeBtn.addEventListener('click', () => {
+  html.dataset.theme = dark() ? 'light' : 'dark';
+  themeBtn.textContent = dark() ? '🌙' : '☀️';
+  refreshTheme();
+});
+
+// ── Palette ──────────────────────────────────────────────────────────────────
+const C = { blue:'#4f86f7', purple:'#9b74f5', green:'#34d399', red:'#f87171', orange:'#fb923c', teal:'#2dd4bf' };
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function grid() { return dark() ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.07)'; }
+function tick() { return dark() ? '#8892a4' : '#6b7280'; }
+function ttBg() { return dark() ? '#21253a' : '#fff'; }
+function ttBd() { return dark() ? '#2a2d3e' : '#e2e6f0'; }
+
+function grad(ctx, color) {
+  const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+  g.addColorStop(0, color + '55'); g.addColorStop(1, color + '00');
+  return g;
+}
+
+function lineDS(label, color, data) {
+  return { label, data, borderColor: color, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+    tension: 0.4, fill: true, backgroundColor: ctx => grad(ctx, color) };
+}
+
+const MAX = 40;
+const shared = { labels: [] };
+
+function axisOpts(max) {
+  return {
+    x: { grid:{ color:grid() }, ticks:{ color:tick(), maxTicksLimit:6, maxRotation:0 } },
+    y: { grid:{ color:grid() }, ticks:{ color:tick() }, ...(max ? { max } : {}), beginAtZero:false },
+  };
+}
+
+function tooltip() {
+  return { mode:'index', intersect:false,
+    backgroundColor:ttBg(), borderColor:ttBd(), borderWidth:1,
+    titleColor: dark()?'#e2e8f0':'#1a1d27', bodyColor:tick(), padding:10 };
+}
+
+function baseOpts(max) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    animation:{ duration:400, easing:'easeInOutQuart' },
+    plugins:{ legend:{display:false}, tooltip:tooltip() },
+    scales: axisOpts(max),
+    interaction:{ mode:'index', intersect:false },
+  };
+}
+
+// ── Charts ───────────────────────────────────────────────────────────────────
+const cUsers = new Chart(document.getElementById('cUsers'), {
+  type:'line', data:{ labels:shared.labels, datasets:[lineDS('Active Users', C.blue, [])] }, options:baseOpts() });
+
+const cLoad = new Chart(document.getElementById('cLoad'), {
+  type:'line', data:{ labels:shared.labels, datasets:[lineDS('Load %', C.orange, [])] }, options:baseOpts(100) });
+
+const cRev = new Chart(document.getElementById('cRev'), {
+  type:'bar', data:{ labels:shared.labels, datasets:[{
+    label:'Revenue', data:[], backgroundColor:C.green+'99', borderColor:C.green, borderWidth:1.5, borderRadius:4
+  }]}, options:{ ...baseOpts(), animation:{duration:300} } });
+
+const cResp = new Chart(document.getElementById('cResp'), {
+  type:'line', data:{ labels:shared.labels, datasets:[lineDS('ms', C.teal, [])] }, options:baseOpts() });
+
+const cErr = new Chart(document.getElementById('cErr'), {
+  type:'line', data:{ labels:shared.labels, datasets:[lineDS('Error %', C.red, [])] }, options:baseOpts(20) });
+
+const cDonut = new Chart(document.getElementById('cDonut'), {
+  type:'doughnut',
+  data:{
+    labels:['Direct','Search','Social','Referral','Email'],
+    datasets:[{ data:[32,28,18,14,8], backgroundColor:[C.blue,C.purple,C.teal,C.green,C.orange], borderWidth:0, hoverOffset:6 }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'72%',
+    plugins:{
+      legend:{ display:true, position:'right', labels:{ color:tick(), font:{size:11}, boxWidth:10, padding:14 } },
+      tooltip:{ backgroundColor:ttBg(), borderColor:ttBd(), borderWidth:1,
+        titleColor: dark()?'#e2e8f0':'#1a1d27', bodyColor:tick() }
+    }
+  }
+});
+
+const allCharts = [cUsers, cLoad, cRev, cResp, cErr];
+
+function refreshTheme() {
+  allCharts.forEach(c => {
+    c.options.scales.x.grid.color = grid();
+    c.options.scales.x.ticks.color = tick();
+    c.options.scales.y.grid.color = grid();
+    c.options.scales.y.ticks.color = tick();
+    Object.assign(c.options.plugins.tooltip, { backgroundColor:ttBg(), borderColor:ttBd(),
+      titleColor:dark()?'#e2e8f0':'#1a1d27', bodyColor:tick() });
+    c.update('none');
+  });
+  cDonut.options.plugins.legend.labels.color = tick();
+  Object.assign(cDonut.options.plugins.tooltip, { backgroundColor:ttBg(), borderColor:ttBd(),
+    titleColor:dark()?'#e2e8f0':'#1a1d27', bodyColor:tick() });
+  cDonut.update('none');
+}
+
+function push(chart, label, value) {
+  chart.data.labels.push(label);
+  chart.data.datasets[0].data.push(value);
+  if (chart.data.labels.length > MAX) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+}
+
+// ── Simulation state ─────────────────────────────────────────────────────────
+const state = {
+  users: 320, views: 8000, rev: 2400, err: 2.1, load: 38, resp: 180
+};
+
+function nudge(v, min, max, d) {
+  return Math.min(max, Math.max(min, v + (Math.random() - 0.5) * d));
+}
+
+// Seed 30 initial points
+(function seed() {
+  const now = Date.now();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now - i * 2000);
+    const lbl = d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    push(cUsers, lbl, Math.round(nudge(320, 80, 900, 40)));
+    push(cLoad,  lbl, parseFloat(nudge(38, 5, 95, 8).toFixed(1)));
+    push(cRev,   lbl, parseFloat((Math.random()*120+20).toFixed(2)));
+    push(cResp,  lbl, Math.round(nudge(180, 40, 800, 50)));
+    push(cErr,   lbl, parseFloat(nudge(2.1, 0, 12, 1).toFixed(2)));
+  }
+  allCharts.forEach(c => c.update('none'));
+})();
+
+// ── KPI helpers ──────────────────────────────────────────────────────────────
+const prev = {};
+
+function updateKPI(valId, deltaId, key, val, fmtFn, lowerIsBetter = false) {
+  document.getElementById(valId).textContent = fmtFn(val);
+  const d = document.getElementById(deltaId);
+  if (prev[key] !== undefined) {
+    const diff = val - prev[key];
+    const pct = prev[key] !== 0 ? Math.abs((diff / prev[key]) * 100).toFixed(1) : '0';
+    const up = diff > 0;
+    const good = lowerIsBetter ? !up : up;
+    d.textContent = (up ? '▲ ' : '▼ ') + pct + '%';
+    d.className = 'kpi-delta ' + (good ? 'up' : 'dn');
+  }
+  prev[key] = val;
+}
+
+// ── Events ───────────────────────────────────────────────────────────────────
+const evList = document.getElementById('evList');
+const evCount = document.getElementById('evCount');
+let totalEvs = 0;
+const seenIds = new Set();
+
+const EV_TYPES = ['info','warning','error','success'];
+const EV_MSGS  = [
+  'New user registered','Payment processed','High memory usage detected',
+  'API rate limit approached','Database query slow','Cache cleared',
+  'Deployment completed','SSL certificate renewed','New signup from referral',
+  'Scheduled backup completed',
+];
+
+function addEvent() {
+  const id   = Date.now();
+  const type = EV_TYPES[Math.floor(Math.random() * EV_TYPES.length)];
+  const msg  = EV_MSGS[Math.floor(Math.random() * EV_MSGS.length)];
+  const now  = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  totalEvs++;
+  evCount.textContent = totalEvs;
+
+  evList.querySelector('.ev-empty')?.remove();
+
+  const li = document.createElement('li');
+  li.className = 'ev-item';
+  li.innerHTML = `<span class="ev-badge eb-${type}">${type}</span>
+    <div><div>${msg}</div><div class="ev-time">${now}</div></div>`;
+  evList.prepend(li);
+  while (evList.children.length > 20) evList.lastChild.remove();
+}
+
+// ── Tick ─────────────────────────────────────────────────────────────────────
+function tick_() {
+  state.users = Math.round(nudge(state.users, 50, 900, 40));
+  state.views += Math.floor(Math.random() * 30) + 5;
+  state.rev   += parseFloat((Math.random() * 20).toFixed(2));
+  state.err    = parseFloat(nudge(state.err,  0, 15, 1).toFixed(2));
+  state.load   = parseFloat(nudge(state.load, 5, 95, 8).toFixed(1));
+  state.resp   = Math.round(nudge(state.resp, 40, 1200, 50));
+
+  const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const tickRev = parseFloat((Math.random() * 130 + 20).toFixed(2));
+
+  // KPIs
+  updateKPI('v-users', 'd-users', 'users', state.users,  v => v.toLocaleString());
+  updateKPI('v-views', 'd-views', 'views', state.views,  v => v.toLocaleString());
+  updateKPI('v-rev',   'd-rev',   'rev',   state.rev,    v => '$' + v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
+  updateKPI('v-err',   'd-err',   'err',   state.err,    v => v.toFixed(2)+'%', true);
+  updateKPI('v-load',  'd-load',  'load',  state.load,   v => v.toFixed(1)+'%', true);
+  updateKPI('v-resp',  'd-resp',  'resp',  state.resp,   v => v+' ms', true);
+
+  // Charts
+  push(cUsers, now, state.users);
+  push(cLoad,  now, state.load);
+  push(cRev,   now, tickRev);
+  push(cResp,  now, state.resp);
+  push(cErr,   now, state.err);
+
+  cUsers.update(); cLoad.update(); cRev.update(); cResp.update(); cErr.update();
+
+  // Doughnut drift
+  const ds = cDonut.data.datasets[0];
+  ds.data = ds.data.map(v => Math.max(2, v + (Math.random() - 0.5) * 2));
+  cDonut.update();
+
+  // Random event
+  if (Math.random() < 0.2) addEvent();
+
+  document.getElementById('ts').textContent = 'Updated ' + now;
+}
+
+// Initial KPI fill
+(function initKPIs() {
+  updateKPI('v-users', 'd-users', 'users', state.users,  v => v.toLocaleString());
+  updateKPI('v-views', 'd-views', 'views', state.views,  v => v.toLocaleString());
+  updateKPI('v-rev',   'd-rev',   'rev',   state.rev,    v => '$' + v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
+  updateKPI('v-err',   'd-err',   'err',   state.err,    v => v.toFixed(2)+'%');
+  updateKPI('v-load',  'd-load',  'load',  state.load,   v => v.toFixed(1)+'%');
+  updateKPI('v-resp',  'd-resp',  'resp',  state.resp,   v => v+' ms');
+  document.getElementById('ts').textContent = 'Live simulation';
+})();
+
+setInterval(tick_, 2000);
+</script>
+</body>
+</html>
